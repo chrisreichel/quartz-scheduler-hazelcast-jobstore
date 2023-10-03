@@ -32,11 +32,16 @@ public abstract class AbstractTest {
   protected int buildTriggerIndex = 0;
   protected int buildJobIndex = 0;
 
-  protected HazelcastInstance createHazelcastInstance(String clusterName) {
+  protected HazelcastInstance createHazelcastInstance(String instanceName, String clusterName) {
+
+
 
     Config config = new Config();
-    config.getGroupConfig().setName(clusterName);
-    config.getGroupConfig().setPassword("some-password");
+    //config.getGroupConfig().setName(clusterName);
+    config.setInstanceName(instanceName);
+    config.setClusterName(clusterName);
+    // Deprecated
+    // config.getGroupConfig().setPassword("some-password");
     config.setProperty("hazelcast.logging.type", "slf4j");
     return Hazelcast.newHazelcastInstance(config);
   }

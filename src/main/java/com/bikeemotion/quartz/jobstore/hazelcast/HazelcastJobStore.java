@@ -1,10 +1,11 @@
 package com.bikeemotion.quartz.jobstore.hazelcast;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.IMap;
+import com.hazelcast.collection.ISet;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.query.Predicate;
 import org.quartz.Calendar;
 import org.quartz.DateBuilder;
@@ -113,7 +114,8 @@ public class HazelcastJobStore implements JobStore, Serializable {
     pausedJobGroups = getSet(HC_JOB_STORE_PAUSED_JOB_GROUPS);
     calendarsByName = getMap(HC_JOB_CALENDAR_MAP);
 
-    triggersByKey.addIndex("nextFireTime", true);
+    //TODO: descomentar abaixao e ver qual o impacto
+    //triggersByKey.addIndex("nextFireTime", true);
 
     LOG.debug("Hazelcast Job Store Initialized.");
   }
@@ -563,7 +565,7 @@ public class HazelcastJobStore implements JobStore, Serializable {
       return Collections.emptyList();
     }
 
-    return triggersByKey.values(new TriggerByJobPredicate(jobKey))
+    return triggersByKey.values(new TriggerPredicate(jobKey))
         .stream()
         .map(v -> (OperableTrigger) v.getTrigger())
         .collect(Collectors.toList());
@@ -605,6 +607,27 @@ public class HazelcastJobStore implements JobStore, Serializable {
       }
     }
     return result;
+  }
+
+  @Override
+  public void resetTriggerFromErrorState(TriggerKey triggerKey) throws JobPersistenceException {
+
+        //TODO: how to handle that?
+
+        triggersByKey.lock(triggerKey, 5, TimeUnit.SECONDS);
+        try {
+        TriggerWrapper tw = triggersByKey.get(triggerKey);
+        if (tw != null) {
+            //tw.setState(NORMAL);
+            triggersByKey.set(triggerKey, tw);
+        }
+        } finally {
+        try {
+            triggersByKey.unlock(triggerKey);
+        } catch (IllegalMonitorStateException ex) {
+            LOG.warn("Error unlocking since it is already released.", ex);
+        }
+        }
   }
 
   @Override
@@ -1115,6 +1138,11 @@ public class HazelcastJobStore implements JobStore, Serializable {
     // not need
   }
 
+  @Override
+  public long getAcquireRetryDelay(int failureCount) {
+    return 0;
+  }
+
   private ArrayList<TriggerWrapper> getTriggerWrappersForJob(JobKey jobKey) {
 
     ArrayList<TriggerWrapper> trigList = new ArrayList<>();
@@ -1237,6 +1265,27 @@ public class HazelcastJobStore implements JobStore, Serializable {
 
 }
 
+class TriggerPredicate implements Predicate<TriggerKey, TriggerWrapper> {
+
+  private TriggerKey key;
+
+  public TriggerPredicate(TriggerKey key) {
+    this.key = key;
+  }
+
+  public TriggerPredicate(JobKey key) {
+    this.key = new TriggerKey(key.getName(), key.getGroup());
+  }
+
+  @Override
+  public boolean apply(Entry<TriggerKey, TriggerWrapper> entry) {
+    return key != null && entry != null && key.getName() != null && key.getGroup() != null
+            && entry.getValue() != null && entry.getValue().jobKey != null
+            && entry.getValue().jobKey.getName().equals(key.getName())
+            && entry.getValue().jobKey.getGroup().equals(key.getGroup());
+  }
+}
+
 /**
  * Filter triggers with a given job key
  */
@@ -1245,13 +1294,11 @@ class TriggerByJobPredicate implements Predicate<JobKey, TriggerWrapper> {
   private JobKey key;
 
   public TriggerByJobPredicate(JobKey key) {
-
     this.key = key;
   }
 
   @Override
   public boolean apply(Entry<JobKey, TriggerWrapper> entry) {
-
     return key != null && entry != null && key.equals(entry.getValue().jobKey);
   }
 }

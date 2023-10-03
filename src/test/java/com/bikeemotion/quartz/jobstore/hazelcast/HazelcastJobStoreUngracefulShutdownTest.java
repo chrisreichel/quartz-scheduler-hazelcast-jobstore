@@ -48,7 +48,7 @@ public class HazelcastJobStoreUngracefulShutdownTest extends AbstractTest {
     throws Exception {
   
     // Build node 1
-    HazelcastInstance hazelcast1 = createHazelcastInstance("testOneOfTwoInstancesCrashing");
+    HazelcastInstance hazelcast1 = createHazelcastInstance("testOneOfTwoInstancesCrashing1", "testOneOfTwoInstancesCrashing");
     HazelcastJobStore.setHazelcastClient(hazelcast1);
     HazelcastJobStore jobstore1 = createJobStore("jobstore1");
     jobstore1.setTriggerReleaseThreshold(450);
@@ -56,7 +56,7 @@ public class HazelcastJobStoreUngracefulShutdownTest extends AbstractTest {
     jobstore1.initialize(null, new SampleSignaler());
 
     // Build node 2
-    HazelcastInstance hazelcast2 = createHazelcastInstance("testOneOfTwoInstancesCrashing");
+    HazelcastInstance hazelcast2 = createHazelcastInstance("testOneOfTwoInstancesCrashing2", "testOneOfTwoInstancesCrashing");
     HazelcastJobStore.setHazelcastClient(hazelcast2);
     HazelcastJobStore jobstore2 = createJobStore("jobstore2");
     jobstore2.setShutdownHazelcastOnShutdown(false);
@@ -90,7 +90,7 @@ public class HazelcastJobStoreUngracefulShutdownTest extends AbstractTest {
     terminateThread.start();
 
     // Wait a bit
-    Thread.sleep(500);
+    Thread.sleep(1500);
 
     // Acquire next triggers on node 2, we should get our trigger here!
     List<OperableTrigger> triggers2 = jobstore2.acquireNextTriggers(firstFireTime + 150 + 6000, 10, 0L);

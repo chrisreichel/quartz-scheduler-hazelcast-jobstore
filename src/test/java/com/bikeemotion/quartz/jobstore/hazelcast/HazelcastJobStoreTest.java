@@ -111,7 +111,7 @@ public class HazelcastJobStoreTest extends AbstractTest {
   public void testShuttingDownWithShuttingDownHazelcast()
     throws SchedulerException {
 
-    HazelcastInstance hazelcastInstance = createHazelcastInstance(UUID.randomUUID().toString());
+    HazelcastInstance hazelcastInstance = createHazelcastInstance("testInstance1", UUID.randomUUID().toString());
 
     HazelcastJobStore jobStore = createJobStore("test-shutting-down-hazelcast");
     HazelcastJobStore.setHazelcastClient(hazelcastInstance);
@@ -125,7 +125,7 @@ public class HazelcastJobStoreTest extends AbstractTest {
   public void testShuttingDownWithoutShuttingDownHazelcast()
     throws SchedulerException {
 
-    HazelcastInstance hazelcastInstance = createHazelcastInstance(UUID.randomUUID().toString());
+    HazelcastInstance hazelcastInstance = createHazelcastInstance("testInstance2", UUID.randomUUID().toString());
 
     HazelcastJobStore jobStore = createJobStore("test-shutting-down-hazelcast");
     HazelcastJobStore.setHazelcastClient(hazelcastInstance);

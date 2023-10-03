@@ -99,7 +99,9 @@ public class QuartzTest extends AbstractTest {
 
     Config config = new Config();
     config.setProperty("hazelcast.logging.type", "slf4j");
-    config.getGroupConfig().setName(UUID.randomUUID().toString());
+    //config.getGroupConfig().setName(UUID.randomUUID().toString());
+    config.setInstanceName("instance-" + UUID.randomUUID().toString());
+    config.setClusterName(UUID.randomUUID().toString());
 
     hazelcastInstance = Hazelcast.newHazelcastInstance(config);
     HazelcastJobStore.setHazelcastClient(hazelcastInstance);
